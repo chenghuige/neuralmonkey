@@ -32,13 +32,17 @@ from neuralmonkey.nn.projection import linear
 from neuralmonkey.nn.ortho_gru_cell import OrthoGRUCell
 
 # pylint: disable=invalid-name
+AttentionLoopStateTA = NamedTuple("AttentionLoopStateTA",
+                                  [("contexts", tf.TensorArray),
+                                   ("weights", tf.TensorArray)])
+
 AttentionLoopState = NamedTuple("AttentionLoopState",
-                                [("contexts", tf.TensorArray),
-                                 ("weights", tf.TensorArray)])
+                                [("contexts", tf.Tensor),
+                                 ("weights", tf.Tensor)])
 # pylint: enable=invalid-name
 
 
-def empty_attention_loop_state() -> AttentionLoopState:
+def empty_attention_loop_state() -> AttentionLoopStateTA:
     """Create an empty attention loop state.
 
     The attention loop state is a technical object for storing the attention
@@ -49,7 +53,7 @@ def empty_attention_loop_state() -> AttentionLoopState:
     two empty arrays, one for attention distributions in time, and one for
     the attention context vectors in time.
     """
-    return AttentionLoopState(
+    return AttentionLoopStateTA(
         contexts=tf.TensorArray(
             dtype=tf.float32, size=0, dynamic_size=True,
             name="contexts"),
@@ -149,13 +153,13 @@ class Attention(BaseAttention):
             self.v_bias = tf.get_variable(
                 "AttnV_b", [], initializer=tf.constant_initializer(0))
 
-    def initial_loop_state(self) -> AttentionLoopState:
+    def initial_loop_state(self) -> AttentionLoopStateTA:
         return empty_attention_loop_state()
 
     def attention(self, decoder_state: tf.Tensor,
                   decoder_prev_state: tf.Tensor, _,
-                  loop_state: AttentionLoopState, step: tf.Tensor) -> Tuple[
-                      tf.Tensor, AttentionLoopState]:
+                  loop_state: AttentionLoopStateTA, step: tf.Tensor) -> Tuple[
+                      tf.Tensor, AttentionLoopStateTA]:
         """put attention masks on att_states_reshaped
            using hidden_features and query.
         """
@@ -192,7 +196,7 @@ class Attention(BaseAttention):
             next_contexts = loop_state.contexts.write(step, context)
             next_weights = loop_state.weights.write(step, weights)
 
-            next_loop_state = AttentionLoopState(
+            next_loop_state = AttentionLoopStateTA(
                 contexts=next_contexts,
                 weights=next_weights)
 
@@ -204,7 +208,7 @@ class Attention(BaseAttention):
             self.v * tf.tanh(self.hidden_features + y), [2, 3]) + self.v_bias
 
     def finalize_loop(self, key: str,
-                      last_loop_state: AttentionLoopState) -> None:
+                      last_loop_state: AttentionLoopStateTA) -> None:
         self.histories[key] = last_loop_state.weights.stack()
 
 

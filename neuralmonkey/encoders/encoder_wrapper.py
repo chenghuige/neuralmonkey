@@ -17,7 +17,8 @@ from typing import Any, List, Union, Type, Tuple, NamedTuple
 import tensorflow as tf
 
 from neuralmonkey.dataset import Dataset
-from neuralmonkey.decoding_function import (BaseAttention, AttentionLoopStateTA,
+from neuralmonkey.decoding_function import (BaseAttention,
+                                            AttentionLoopStateTA,
                                             empty_attention_loop_state)
 from neuralmonkey.model.model_part import ModelPart, FeedDict
 from neuralmonkey.encoders.attentive import Attentive

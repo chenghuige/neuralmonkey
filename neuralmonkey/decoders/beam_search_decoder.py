@@ -30,8 +30,8 @@ from typing import NamedTuple, List, Callable, Optional, Any
 import tensorflow as tf
 from typeguard import check_argument_types
 
-from neuralmonkey.decoding_function import (BaseAttention,
-                                            AttentionLoopState)
+from neuralmonkey.decoding_function import BaseAttention
+                                            #AttentionLoopState)
 from neuralmonkey.model.model_part import ModelPart, FeedDict
 from neuralmonkey.dataset import Dataset
 from neuralmonkey.decoders.decoder import Decoder, LoopState
@@ -42,7 +42,6 @@ from neuralmonkey.decorators import tensor
 DecoderState = NamedTuple("DecoderState",
                           [("step", tf.Tensor),
                            ("input_symbol", tf.Tensor),
-                           ("train_inputs", Optional[tf.Tensor]),
                            ("prev_rnn_state", tf.Tensor),
                            ("prev_rnn_output", tf.Tensor),
                            ("prev_logits", tf.Tensor),
@@ -163,7 +162,6 @@ class BeamSearchDecoder(ModelPart):
         self._decoder_state = DecoderState(
             step=dec_ls.step,
             input_symbol=tf.gather(dec_ls.input_symbol, indices),
-            train_inputs=tf.gather(dec_ls.train_inputs, indices),
             prev_rnn_state=tf.gather(dec_ls.prev_rnn_state, indices),
             prev_rnn_output=tf.gather(dec_ls.prev_rnn_output, indices),
             prev_logits=dec_ls.prev_logits,
@@ -220,7 +218,6 @@ class BeamSearchDecoder(ModelPart):
             last_dec_loop_state=DecoderState(
                 step=dec_loop_state.step,
                 input_symbol=dec_loop_state.input_symbol,
-                train_inputs=dec_loop_state.train_inputs,
                 prev_rnn_state=dec_loop_state.prev_rnn_state,
                 prev_rnn_output=dec_loop_state.prev_rnn_output,
                 prev_logits=dec_loop_state.prev_logits,

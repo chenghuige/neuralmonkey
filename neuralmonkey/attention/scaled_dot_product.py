@@ -71,16 +71,21 @@ class MultiHeadAttention(BaseAttention):
                 query, self.attention_keys, self.attention_values)
             head_weights = [weights]
         else:
-            # project query, keys and vals: [batch, rnn] to [batch, rnn2]
+            # first, project query, keys and vals linearly to the same dim
+            # use a single parameter matrix for efficiency
+            query_proj = linear(query, self._dimension, scope="query_proj")
+            keys_proj = linear(self.attention_keys, self._dimension,
+                               scope="keys_proj")
+            vals_proj = linear(self.attention_values, self._dimension,
+                               scope="vals_proj")
+
+            query_heads = tf.split(query_proj, self.n_heads, axis=1)
+            keys_heads = tf.split(keys_proj, self.n_heads, axis=2)
+            vals_heads = tf.split(vals_proj, self.n_heads, axis=2)
+
             head_contexts, head_weights = zip(*[
-                self.attention_single_head(
-                    linear(query, self._head_dim,
-                           scope="query_proj_head{}".format(i)),
-                    linear(self.attention_keys, self._head_dim,
-                           scope="keys_proj_head{}".format(i)),
-                    linear(self.attention_values, self._head_dim,
-                           scope="values_proj_head{}".format(i)))
-                for i in range(self.n_heads)])
+                self.attention_single_head(q, k, v)
+                for q, k, v in zip(query_heads, key_heads, value_heads)])
 
             context = linear(tf.concat(head_contexts, -1), self._dimension,
                              scope="output_proj")
